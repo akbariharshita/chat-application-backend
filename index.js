@@ -28,7 +28,10 @@ app.use(
   })
 );
 
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: { origin: "*" },
+  maxHttpBufferSize: 50 * 1024 * 1024,
+});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -96,15 +99,18 @@ io.on("connection", (socket) => {
     "sendMessageToRoom",
     async ({ roomName, userName, message, file }) => {
       let fileUrl = "";
+      console.log({ file });
 
       if (file) {
         const { fileName, fileBuffer, fileType } = file;
 
+        const binaryBuffer = Buffer.from(fileBuffer);
+
         const bufferStream = new Readable();
-        bufferStream.push(fileBuffer);
+        bufferStream.push(binaryBuffer);
         bufferStream.push(null);
 
-        const result = await uploadImage(fileName, fileBuffer);
+        const result = await uploadImage(fileName, binaryBuffer);
         if (result && result.url) {
           fileUrl = result.url;
           console.log("File uploaded to Cloudinary:", fileUrl);
